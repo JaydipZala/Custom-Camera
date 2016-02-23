@@ -1,2 +1,2 @@
-Custom Camera Android app
+# Custom Camera
  - With Auto Focus functionality.
