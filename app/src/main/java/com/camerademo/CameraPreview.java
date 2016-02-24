@@ -61,6 +61,7 @@ public class CameraPreview extends SurfaceView implements
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         mCamera.stopPreview();
+        this.mSurfaceHolder.removeCallback(this);
         mCamera.release();
     }
 
@@ -73,6 +74,7 @@ public class CameraPreview extends SurfaceView implements
             mCamera.startPreview();
         } catch (Exception e) {
             // intentionally left blank for a test
+            e.printStackTrace();
         }
     }
 
@@ -93,12 +95,12 @@ public class CameraPreview extends SurfaceView implements
             mCamera.setParameters(param);
 
             mCamera.autoFocus(myAutoFocusCallback);
-
-            if (isNeedToTakePic()) {
-                onFocusListener.onFocused();
-            }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+        if (isNeedToTakePic()) {
+            onFocusListener.onFocused();
         }
     }
 

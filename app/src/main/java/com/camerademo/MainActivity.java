@@ -15,15 +15,15 @@ import android.widget.FrameLayout;
 import com.camerademo.interfaces.OnFocusListener;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class MainActivity extends Activity
         implements OnFocusListener {
-    private Button captureButton;
+    private Button captureButton, switchCameraButton;
     private Camera mCamera;
     private CameraPreview mCameraPreview;
+    private int currentCameraId;
 
     /**
      * Called when the activity is first created.
@@ -32,10 +32,11 @@ public class MainActivity extends Activity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mCamera = getCameraInstance();
-        mCameraPreview = new CameraPreview(this, mCamera);
-        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-        preview.addView(mCameraPreview);
+        if (getIntent().hasExtra("camera_id")) {
+            currentCameraId = getIntent().getIntExtra("camera_id", Camera.CameraInfo.CAMERA_FACING_BACK);
+        } else {
+            currentCameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
+        }
 
         captureButton = (Button) findViewById(R.id.button_capture);
         captureButton.setOnClickListener(new View.OnClickListener() {
@@ -63,6 +64,41 @@ public class MainActivity extends Activity
                 mCameraPreview.dispatchTouchEvent(motionEvent);
             }
         });
+
+        switchCameraButton = (Button) findViewById(R.id.button_switch_camera);
+        switchCameraButton.setVisibility(
+                Camera.getNumberOfCameras() > 1 ? View.VISIBLE : View.GONE);
+        switchCameraButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mCamera.stopPreview();
+                //NB: if you don't release the current camera before switching, you app will crash
+                mCameraPreview.getHolder().removeCallback(mCameraPreview);
+                mCamera.release();
+
+                //swap the id of the camera to be used
+                if (currentCameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                    currentCameraId = Camera.CameraInfo.CAMERA_FACING_FRONT;
+                } else {
+                    currentCameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
+                }
+
+                mCamera = getCameraInstance(currentCameraId);
+                mCameraPreview = new CameraPreview(MainActivity.this, mCamera);
+                FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+                preview.removeAllViews();
+                preview.addView(mCameraPreview);
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mCamera = getCameraInstance(currentCameraId);
+        mCameraPreview = new CameraPreview(this, mCamera);
+        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+        preview.addView(mCameraPreview);
     }
 
     /**
@@ -71,10 +107,10 @@ public class MainActivity extends Activity
      *
      * @return
      */
-    private Camera getCameraInstance() {
+    private Camera getCameraInstance(int currentCameraId) {
         Camera camera = null;
         try {
-            camera = Camera.open();
+            camera = Camera.open(currentCameraId);
         } catch (Exception e) {
             // cannot get camera or does not exist
         }
@@ -92,9 +128,8 @@ public class MainActivity extends Activity
                 FileOutputStream fos = new FileOutputStream(pictureFile);
                 fos.write(data);
                 fos.close();
-            } catch (FileNotFoundException e) {
-
             } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     };

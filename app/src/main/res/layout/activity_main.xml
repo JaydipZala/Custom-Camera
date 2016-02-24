@@ -11,6 +11,13 @@
         android:layout_weight="1" />
 
     <Button
+        android:id="@+id/button_switch_camera"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Switch Camera" />
+
+    <Button
         android:id="@+id/button_capture"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
